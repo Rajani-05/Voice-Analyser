@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content="AI Interview Evaluation — speak your answer and get instant scoring, sentiment analysis, and feedback."/>
+<title>InterviewAI — Smart Interview Evaluator</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎙</text></svg>"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet"/>
+<style>
+/* ── Reset & Tokens ─────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#060c1a;--surface:rgba(13,21,42,0.8);--glass:rgba(255,255,255,0.04);
+  --border:rgba(255,255,255,0.08);--border-acc:rgba(99,102,241,0.35);
+  --acc1:#6366f1;--acc2:#8b5cf6;--acc3:#38bdf8;
+  --green:#22c55e;--amber:#f59e0b;--red:#ef4444;--pink:#f472b6;
+  --txt:#f1f5f9;--txt2:#94a3b8;--txt3:#475569;
+  --r:14px;--rL:22px;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+
+/* ── Background ─────────────────────────────────── */
+body::before,body::after{content:'';position:fixed;border-radius:50%;filter:blur(120px);pointer-events:none;z-index:0}
+body::before{width:600px;height:600px;background:radial-gradient(circle,rgba(99,102,241,.15),transparent 70%);top:-150px;left:-150px;animation:orb 14s ease-in-out infinite}
+body::after{width:500px;height:500px;background:radial-gradient(circle,rgba(139,92,246,.12),transparent 70%);bottom:-100px;right:-100px;animation:orb 18s ease-in-out infinite reverse}
+@keyframes orb{0%,100%{transform:translate(0,0)}50%{transform:translate(40px,-30px)}}
+
+/* ── Layout ─────────────────────────────────────── */
+#app{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:0 20px 60px}
+
+/* ── Header ─────────────────────────────────────── */
+header{text-align:center;padding:44px 0 32px}
+.logo-icon{font-size:2.8rem;display:block;margin-bottom:12px;filter:drop-shadow(0 0 16px rgba(99,102,241,.6));animation:pulse 3s ease-in-out infinite}
+@keyframes pulse{0%,100%{filter:drop-shadow(0 0 16px rgba(99,102,241,.6))}50%{filter:drop-shadow(0 0 28px rgba(99,102,241,.9))}}
+h1{font-family:'Space Grotesk',sans-serif;font-size:2.2rem;font-weight:700;background:linear-gradient(135deg,#818cf8,#c084fc,#38bdf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1.2;margin-bottom:8px}
+.subtitle{color:var(--txt2);font-size:.95rem}
+.badges{display:flex;justify-content:center;gap:8px;margin-top:14px;flex-wrap:wrap}
+.badge{padding:4px 14px;border-radius:999px;font-size:.72rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase}
+.b-ai{background:rgba(99,102,241,.15);color:#818cf8;border:1px solid rgba(99,102,241,.3)}
+.b-nlp{background:rgba(139,92,246,.15);color:#c084fc;border:1px solid rgba(139,92,246,.3)}
+.b-stt{background:rgba(56,189,248,.15);color:#38bdf8;border:1px solid rgba(56,189,248,.3)}
+
+/* ── Card ───────────────────────────────────────── */
+.card{background:var(--surface);backdrop-filter:blur(24px);border:1px solid var(--border);border-radius:var(--rL);padding:28px;margin-bottom:20px;transition:border-color .3s,box-shadow .3s;box-shadow:0 8px 32px rgba(0,0,0,.35)}
+.card:hover{border-color:var(--border-acc)}
+.card-title{font-family:'Space Grotesk',sans-serif;font-size:1.05rem;font-weight:600;display:flex;align-items:center;gap:8px;margin-bottom:18px}
+
+/* ── Form ───────────────────────────────────────── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.full{grid-column:1/-1}
+label{font-size:.75rem;font-weight:600;color:var(--txt2);text-transform:uppercase;letter-spacing:.08em}
+select,input,textarea{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:var(--r);color:var(--txt);font-family:'Inter',sans-serif;font-size:.88rem;padding:10px 13px;outline:none;width:100%;transition:border-color .2s,box-shadow .2s}
+select:focus,input:focus,textarea:focus{border-color:var(--acc1);box-shadow:0 0 0 3px rgba(99,102,241,.15)}
+select option{background:#1e293b}
+textarea{resize:vertical;min-height:90px;line-height:1.6}
+textarea[readonly]{opacity:.65;cursor:not-allowed}
+
+/* ── Recorder ───────────────────────────────────── */
+.recorder-box{text-align:center;padding:8px 0 4px}
+#waveform{display:flex;align-items:center;justify-content:center;gap:3px;height:56px;margin-bottom:18px}
+.bar{width:4px;border-radius:4px;background:linear-gradient(180deg,var(--acc1),var(--acc2));min-height:3px;transition:height .07s;opacity:.3}
+.bar.on{opacity:1;box-shadow:0 0 6px rgba(99,102,241,.5)}
+.btn-row{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+button{display:inline-flex;align-items:center;gap:8px;padding:11px 26px;border-radius:999px;font-size:.92rem;font-weight:600;border:none;cursor:pointer;transition:all .25s;letter-spacing:.01em}
+#btn-rec{background:linear-gradient(135deg,var(--acc1),var(--acc2));color:#fff;box-shadow:0 4px 18px rgba(99,102,241,.4)}
+#btn-rec:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(99,102,241,.55)}
+#btn-stop{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;box-shadow:0 4px 18px rgba(239,68,68,.4);display:none}
+#btn-stop:hover{transform:translateY(-2px)}
+#btn-eval{background:linear-gradient(135deg,var(--acc1),var(--acc2),var(--acc3));background-size:200%;color:#fff;box-shadow:0 4px 20px rgba(99,102,241,.4);padding:13px 32px;font-size:.95rem;animation:gradMove 4s ease-in-out infinite}
+#btn-eval:disabled{opacity:.4;cursor:not-allowed;animation:none}
+#btn-eval:not(:disabled):hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(99,102,241,.6)}
+#btn-reset{background:transparent;border:1px solid var(--border);color:var(--txt2);display:none}
+#btn-reset:hover{border-color:rgba(255,255,255,.2);color:var(--txt);background:rgba(255,255,255,.04)}
+@keyframes gradMove{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.rec-tip{font-size:.8rem;color:#f87171;margin-top:6px;display:none;animation:fadeIn .3s ease}
+.status-msg{background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.2);border-radius:var(--r);padding:10px 14px;color:#a5b4fc;font-size:.85rem;margin-top:12px;display:none}
+.err-msg{background:rgba(239,68,68,.09);border:1px solid rgba(239,68,68,.2);border-radius:var(--r);padding:10px 14px;color:#fca5a5;font-size:.85rem;margin-top:12px;display:none}
+
+/* ── Transcript ─────────────────────────────────── */
+#transcript{min-height:80px}
+.word-ct{text-align:right;font-size:.72rem;color:var(--txt3);margin-top:5px}
+
+/* ── Results ────────────────────────────────────── */
+#results{display:none;animation:slideUp .5s cubic-bezier(.4,0,.2,1)}
+@keyframes slideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+.results-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px}
+.results-header h2{font-family:'Space Grotesk',sans-serif;font-size:1.25rem;font-weight:700;display:flex;align-items:center;gap:10px}
+.grade-pill{padding:5px 18px;border-radius:999px;font-size:.8rem;font-weight:700;color:#fff;letter-spacing:.05em;text-transform:uppercase}
+.results-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.col-full{grid-column:1/-1}
+
+/* ── Score Ring ─────────────────────────────────── */
+.score-card{text-align:center}
+.ring-wrap{display:flex;justify-content:center;margin-bottom:14px}
+.score-grade{font-size:1.3rem;font-weight:700;font-family:'Space Grotesk',sans-serif}
+.breakdown{margin-top:18px}
+.breakdown-title{font-size:.72rem;font-weight:600;color:var(--txt3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px}
+.b-row{margin-bottom:8px}
+.b-label{display:flex;justify-content:space-between;font-size:.78rem;color:var(--txt2);margin-bottom:4px}
+.b-val{font-weight:600;color:var(--txt)}
+.track{height:5px;background:rgba(255,255,255,.06);border-radius:999px;overflow:hidden}
+.fill{height:100%;border-radius:999px;width:0;transition:width .9s cubic-bezier(.4,0,.2,1)}
+
+/* ── Sentiment ──────────────────────────────────── */
+.sent-main{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.sent-emoji{font-size:2.8rem;line-height:1}
+.sent-label{font-size:1.1rem;font-weight:700;font-family:'Space Grotesk',sans-serif}
+.sent-desc{font-size:.82rem;color:var(--txt2);margin-top:3px;line-height:1.5}
+.sent-bar-label{display:flex;justify-content:space-between;font-size:.78rem;color:var(--txt2);margin-bottom:5px}
+.sent-track{height:7px;background:rgba(255,255,255,.07);border-radius:999px;overflow:hidden;position:relative}
+.sent-fill{height:100%;background:linear-gradient(90deg,#ef4444,#f59e0b,#22c55e);border-radius:999px;width:0;transition:width 1s cubic-bezier(.4,0,.2,1)}
+.sent-scale{display:flex;justify-content:space-between;font-size:.68rem;color:var(--txt3);margin-top:3px}
+.sent-mini{display:flex;justify-content:space-between;margin-top:14px;border-top:1px solid var(--border);padding-top:12px}
+.sm-item{text-align:center;flex:1}
+.sm-lbl{font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.sm-val{font-size:1rem;font-weight:700;color:var(--txt);margin-top:2px}
+
+/* ── Keywords ───────────────────────────────────── */
+.kw-stats{display:flex;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:14px}
+.kw-stat{flex:1;text-align:center;padding:12px 6px;border-right:1px solid var(--border)}
+.kw-stat:last-child{border-right:none}
+.kw-stat-val{font-family:'Space Grotesk',sans-serif;font-size:1.4rem;font-weight:700}
+.kw-stat-lbl{font-size:.68rem;color:var(--txt3);text-transform:uppercase;letter-spacing:.06em;margin-top:3px}
+.match-bar{height:5px;background:rgba(255,255,255,.07);border-radius:999px;overflow:hidden;margin-bottom:16px}
+.match-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--acc3));border-radius:999px;width:0;transition:width 1s cubic-bezier(.4,0,.2,1)}
+.kw-section-lbl{font-size:.73rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--txt2);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
+.chip{padding:4px 12px;border-radius:999px;font-size:.78rem;font-weight:500}
+.chip-m{background:rgba(34,197,94,.12);color:#4ade80;border:1px solid rgba(34,197,94,.3)}
+.chip-x{background:rgba(239,68,68,.09);color:#f87171;border:1px dashed rgba(239,68,68,.35)}
+
+/* ── Feedback ───────────────────────────────────── */
+.fb-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.fb-section{border-radius:var(--r);padding:16px}
+.fb-str{background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.15)}
+.fb-imp{background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.15)}
+.fb-tip{background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.15)}
+.fb-title{font-size:.85rem;font-weight:600;display:flex;align-items:center;gap:6px;margin-bottom:10px}
+.fb-list{list-style:none;display:flex;flex-direction:column;gap:8px}
+.fb-item{display:flex;gap:8px;font-size:.8rem;color:var(--txt2);line-height:1.5}
+.fb-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;margin-top:6px}
+.fb-str .fb-dot{background:var(--green)}
+.fb-imp .fb-dot{background:var(--amber)}
+.fb-tip .fb-dot{background:var(--acc1)}
+
+/* ── Spinner & utils ─────────────────────────────── */
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+footer{text-align:center;padding:20px;font-size:.75rem;color:var(--txt3);border-top:1px solid var(--border);margin-top:20px}
+
+/* ── Responsive ─────────────────────────────────── */
+@media(max-width:680px){
+  h1{font-size:1.6rem}
+  .form-grid,.results-grid,.fb-grid{grid-template-columns:1fr}
+  .full,.col-full{grid-column:auto}
+  .kw-stats{flex-wrap:wrap}
+  .kw-stat{min-width:50%}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- Header -->
+<header>
+  <span class="logo-icon">🎙</span>
+  <h1>InterviewAI</h1>
+  <p class="subtitle">Speak your answer — get instant AI-powered evaluation</p>
+  <div class="badges">
+    <span class="badge b-ai">AI Powered</span>
+    <span class="badge b-nlp">NLP · VADER · TF-IDF</span>
+    <span class="badge b-stt">Web Speech API</span>
+  </div>
+</header>
+
+<!-- Setup -->
+<div class="card">
+  <div class="card-title">⚙️ Interview Setup</div>
+  <div class="form-grid">
+    <div class="form-group">
+      <label for="jd-role">Job Role</label>
+      <select id="jd-role">
+        <option value="swe">💻 Software Engineer</option>
+        <option value="ds">📊 Data Scientist</option>
+        <option value="pm">📦 Product Manager</option>
+        <option value="devops">🔧 DevOps Engineer</option>
+        <option value="custom">✏️ Custom JD</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="question">Interview Question</label>
+      <input id="question" type="text" placeholder="Enter the interview question…"/>
+    </div>
+    <div class="form-group full">
+      <label for="jd-text">Job Description</label>
+      <textarea id="jd-text" rows="5" readonly></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- Recorder -->
+<div class="card">
+  <div class="card-title">🎤 Your Answer</div>
+  <div class="recorder-box">
+    <div id="waveform"></div>
+    <div class="btn-row">
+      <button id="btn-rec">🎙 Start Recording</button>
+      <button id="btn-stop">⏹ Stop</button>
+    </div>
+    <p class="rec-tip" id="rec-tip">🔴 Listening — speak clearly, then click Stop</p>
+  </div>
+  <div class="form-group" style="margin-top:8px">
+    <label for="transcript">Transcribed / Typed Answer</label>
+    <textarea id="transcript" rows="5" placeholder="Your answer will appear here after recording, or type directly…"></textarea>
+    <div class="word-ct" id="wc">0 words</div>
+  </div>
+  <div class="status-msg" id="status-msg"></div>
+  <div class="err-msg" id="err-msg"></div>
+  <div class="btn-row" style="margin-top:16px;justify-content:flex-start">
+    <button id="btn-eval" disabled>🚀 Evaluate My Answer</button>
+    <button id="btn-reset">🔄 Reset</button>
+  </div>
+</div>
+
+<!-- Results -->
+<div id="results">
+  <div class="results-header">
+    <h2>📊 Evaluation Results</h2>
+    <span class="grade-pill" id="grade-pill"></span>
+  </div>
+  <div class="results-grid">
+    <!-- Score -->
+    <div class="card score-card">
+      <div class="card-title">🎯 Final Score</div>
+      <div class="ring-wrap">
+        <svg width="150" height="150" id="score-ring">
+          <circle cx="75" cy="75" r="60" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="11"/>
+          <circle cx="75" cy="75" r="60" fill="none" id="ring-arc" stroke="#6366f1" stroke-width="11"
+                  stroke-linecap="round" stroke-dasharray="377" stroke-dashoffset="377"
+                  style="transform:rotate(-90deg);transform-origin:75px 75px;transition:stroke-dashoffset 1.2s cubic-bezier(.4,0,.2,1)"/>
+          <text x="75" y="70" text-anchor="middle" fill="white" font-size="26" font-weight="700" font-family="Space Grotesk,sans-serif" id="score-txt">0</text>
+          <text x="75" y="88" text-anchor="middle" fill="rgba(255,255,255,0.45)" font-size="11" font-family="Inter,sans-serif">out of 10</text>
+        </svg>
+      </div>
+      <div class="score-grade" id="score-grade"></div>
+      <div class="breakdown">
+        <div class="breakdown-title">Score Breakdown</div>
+        <div id="breakdown-bars"></div>
+      </div>
+    </div>
+    <!-- Sentiment -->
+    <div class="card">
+      <div class="card-title">🧠 Sentiment</div>
+      <div class="sent-main">
+        <div class="sent-emoji" id="sent-emoji"></div>
+        <div>
+          <div class="sent-label" id="sent-label"></div>
+          <div class="sent-desc" id="sent-desc"></div>
+        </div>
+      </div>
+      <div class="sent-bar-label">
+        <span>Compound Score</span>
+        <span id="sent-compound"></span>
+      </div>
+      <div class="sent-track"><div class="sent-fill" id="sent-fill"></div></div>
+      <div class="sent-scale"><span>Negative</span><span>Neutral</span><span>Positive</span></div>
+      <div class="sent-mini">
+        <div class="sm-item"><div class="sm-lbl" style="color:var(--green)">Positive</div><div class="sm-val" id="s-pos"></div></div>
+        <div class="sm-item"><div class="sm-lbl" style="color:var(--txt2)">Neutral</div><div class="sm-val" id="s-neu"></div></div>
+        <div class="sm-item"><div class="sm-lbl" style="color:var(--red)">Negative</div><div class="sm-val" id="s-neg"></div></div>
+      </div>
+    </div>
+    <!-- Keywords (full width) -->
+    <div class="card col-full">
+      <div class="card-title">🔍 Keyword Analysis</div>
+      <div class="kw-stats" id="kw-stats"></div>
+      <div class="match-bar"><div class="match-fill" id="match-fill"></div></div>
+      <div id="matched-section"></div>
+      <div id="missing-section"></div>
+    </div>
+    <!-- Feedback (full width) -->
+    <div class="card col-full">
+      <div class="card-title">📋 Detailed Feedback</div>
+      <div class="fb-grid">
+        <div class="fb-section fb-str">
+          <div class="fb-title">✅ Strengths</div>
+          <ul class="fb-list" id="fb-str"></ul>
+        </div>
+        <div class="fb-section fb-imp">
+          <div class="fb-title">⚠️ Improvements</div>
+          <ul class="fb-list" id="fb-imp"></ul>
+        </div>
+        <div class="fb-section fb-tip">
+          <div class="fb-title">💡 Pro Tips</div>
+          <ul class="fb-list" id="fb-tip"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>InterviewAI — FastAPI · VADER Sentiment · TF-IDF · Web Speech API</footer>
+</div><!-- /app -->
+
+<script>
+// ── JD Templates ────────────────────────────────────────────────────────
+const JD = {
+  swe:`We need a Software Engineer with 3+ years of experience.
+Skills: Python, JavaScript, React, REST APIs, microservices, Docker, Kubernetes, CI/CD, Git, AWS/GCP.
+Strong problem-solving, unit testing, agile, and cross-functional collaboration required.`,
+  ds:`Data Scientist needed with ML/statistics expertise.
+Required: Python, R, TensorFlow, PyTorch, scikit-learn, pandas, NumPy, SQL, NLP, deep learning.
+Experience in model deployment, feature engineering, and data visualization (Tableau, Matplotlib).`,
+  pm:`Product Manager to lead product strategy and roadmap.
+Required: product lifecycle, user stories, stakeholder management, agile/scrum, A/B testing, OKRs.
+Data analytics, user research, roadmap prioritization, and strong communication skills essential.`,
+  devops:`DevOps Engineer for cloud infrastructure and automation.
+Required: Docker, Kubernetes, Terraform, Jenkins, CI/CD, Linux, Bash, Prometheus, Grafana.
+AWS/Azure/GCP experience, security best practices, networking, and high-availability architecture.`,
+  custom:``
+};
+const QUESTIONS = {
+  swe:`Tell me about your experience with React and frontend development.`,
+  ds:`How have you applied machine learning to solve real business problems?`,
+  pm:`Describe a product you launched from scratch and your process.`,
+  devops:`How do you handle infrastructure as code and deployment automation?`,
+  custom:`Tell me about yourself and why you're a good fit for this role.`
+};
+const GRADE_COLORS = {Excellent:'#22c55e',Good:'#3b82f6',Average:'#f59e0b','Needs Work':'#ef4444'};
+
+// ── DOM ─────────────────────────────────────────────────────────────────
+const $=id=>document.getElementById(id);
+const roleEl=$('jd-role'), jdEl=$('jd-text'), qEl=$('question'), txEl=$('transcript');
+const btnRec=$('btn-rec'), btnStop=$('btn-stop'), btnEval=$('btn-eval'), btnReset=$('btn-reset');
+const recTip=$('rec-tip'), statusMsg=$('status-msg'), errMsg=$('err-msg'), wcEl=$('wc');
+const results=$('results');
+
+// ── Init waveform ───────────────────────────────────────────────────────
+const BARS=36;
+const wf=$('waveform');
+for(let i=0;i<BARS;i++){const b=document.createElement('div');b.className='bar';b.style.height='3px';wf.appendChild(b);}
+const bars=[...wf.querySelectorAll('.bar')];
+let wfTimer=null;
+function animWave(on){
+  clearInterval(wfTimer);
+  if(!on){bars.forEach(b=>{b.classList.remove('on');b.style.height='3px'});return}
+  wfTimer=setInterval(()=>{
+    bars.forEach(b=>{
+      const h=on?Math.random()*52+4:3;
+      b.style.height=h+'px';
+      b.classList.toggle('on',on);
+    });
+  },80);
+}
+
+// ── Populate JD + question on load ──────────────────────────────────────
+function loadTemplate(){
+  const k=roleEl.value;
+  jdEl.value=JD[k];
+  jdEl.readOnly=(k!=='custom');
+  qEl.value=QUESTIONS[k];
+}
+loadTemplate();
+roleEl.addEventListener('change',()=>{loadTemplate();clearResults();});
+
+// ── Word count ──────────────────────────────────────────────────────────
+txEl.addEventListener('input',()=>{
+  const wc=txEl.value.trim().split(/\s+/).filter(Boolean).length;
+  wcEl.textContent=wc+' words';
+  btnEval.disabled=wc<1;
+  clearResults();
+});
+
+// ── Web Speech API ──────────────────────────────────────────────────────
+let recognition=null;
+const hasSpeech='SpeechRecognition' in window||'webkitSpeechRecognition' in window;
+
+btnRec.addEventListener('click',()=>{
+  if(!hasSpeech){
+    showErr('Speech recognition not supported in this browser. Use Chrome or Edge, or type your answer.');
+    return;
+  }
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  recognition=new SR();
+  recognition.lang='en-US';
+  recognition.continuous=true;
+  recognition.interimResults=true;
+
+  let finalText='';
+  recognition.onresult=e=>{
+    let interim='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      if(e.results[i].isFinal) finalText+=e.results[i][0].transcript+' ';
+      else interim+=e.results[i][0].transcript;
+    }
+    txEl.value=(finalText+interim).trim();
+    const wc=txEl.value.trim().split(/\s+/).filter(Boolean).length;
+    wcEl.textContent=wc+' words';
+    btnEval.disabled=wc<1;
+  };
+  recognition.onerror=e=>{
+    showErr(`Mic error: ${e.error}. Please check permissions and try again.`);
+    stopRec();
+  };
+  recognition.onend=()=>stopRec();
+
+  recognition.start();
+  btnRec.style.display='none';
+  btnStop.style.display='inline-flex';
+  recTip.style.display='block';
+  animWave(true);
+  showStatus('🔴 Recording — speak clearly…');
+});
+
+btnStop.addEventListener('click',()=>{
+  recognition&&recognition.stop();
+  stopRec();
+});
+
+function stopRec(){
+  animWave(false);
+  btnStop.style.display='none';
+  btnRec.style.display='inline-flex';
+  recTip.style.display='none';
+  hideStatus();
+}
+
+// ── Evaluate ────────────────────────────────────────────────────────────
+btnEval.addEventListener('click',async()=>{
+  const t=txEl.value.trim();
+  const jd=jdEl.value.trim();
+  if(!t){showErr('Please record or type your answer first.');return}
+  if(jd.length<20){showErr('Job description is too short.');return}
+
+  btnEval.disabled=true;
+  btnEval.innerHTML='<span class="spin"></span>Evaluating…';
+  hideErr(); hideStatus();
+  showStatus('🧠 Analysing your response…');
+
+  try{
+    const res=await fetch('http://localhost:8000/evaluate',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({transcript:t,job_description:jd,question:qEl.value})
+    });
+    if(!res.ok) throw new Error(await res.text());
+    const data=await res.json();
+    if(data.error) throw new Error(data.error);
+    renderResults(data);
+    hideStatus();
+  }catch(e){
+    showErr('Backend error: '+e.message+'. Make sure the FastAPI server is running on port 8000.');
+  }finally{
+    btnEval.disabled=false;
+    btnEval.innerHTML='🚀 Evaluate My Answer';
+  }
+});
+
+// ── Render Results ──────────────────────────────────────────────────────
+function renderResults(d){
+  results.style.display='block';
+  btnReset.style.display='inline-flex';
+  setTimeout(()=>results.scrollIntoView({behavior:'smooth',block:'start'}),100);
+
+  // Grade pill
+  const gp=$('grade-pill');
+  gp.textContent=d.grade;
+  gp.style.background=GRADE_COLORS[d.grade]||'#6366f1';
+
+  // Score ring animation
+  const score=d.final_score;
+  const arc=$('ring-arc');
+  const CIRC=2*Math.PI*60;
+  arc.style.strokeDashoffset=CIRC-(score/10)*CIRC;
+  arc.style.stroke=GRADE_COLORS[d.grade]||'#6366f1';
+  arc.style.filter=`drop-shadow(0 0 8px ${GRADE_COLORS[d.grade]||'#6366f1'}66)`;
+  // Animate number
+  let cur=0;
+  const step=score/60;
+  const t=setInterval(()=>{
+    cur=Math.min(cur+step,score);
+    $('score-txt').textContent=cur.toFixed(1);
+    if(cur>=score) clearInterval(t);
+  },20);
+  $('score-grade').textContent={Excellent:'🏆 Excellent',Good:'👍 Good',Average:'📈 Average','Needs Work':'💪 Needs Work'}[d.grade]||d.grade;
+  $('score-grade').style.color=GRADE_COLORS[d.grade];
+
+  // Breakdown bars
+  const bd=d.score_breakdown;
+  const bItems=[
+    {l:'Keyword Match',v:bd.keyword,c:'#818cf8'},
+    {l:'JD Similarity',v:bd.similarity,c:'#38bdf8'},
+    {l:'Sentiment',v:bd.sentiment,c:'#34d399'},
+    {l:'Answer Length',v:bd.length,c:'#fbbf24'},
+    {l:'Specificity',v:bd.specificity,c:'#f472b6'},
+  ];
+  $('breakdown-bars').innerHTML=bItems.map(b=>`
+    <div class="b-row">
+      <div class="b-label"><span>${b.l}</span><span class="b-val">${b.v.toFixed(1)}</span></div>
+      <div class="track"><div class="fill" style="background:${b.c}" data-w="${b.v*10}"></div></div>
+    </div>`).join('');
+  setTimeout(()=>document.querySelectorAll('.fill').forEach(f=>{f.style.width=f.dataset.w+'%'}),50);
+
+  // Sentiment
+  const s=d.sentiment;
+  const cfg={Positive:{e:'😊',c:'#22c55e',desc:'Confident and positive tone — great for interviews!'},
+              Neutral:{e:'😐',c:'#94a3b8',desc:'Balanced tone. Try adding more enthusiasm.'},
+              Negative:{e:'😟',c:'#ef4444',desc:'Sounds pessimistic. Reframe challenges positively.'}};
+  const sc=cfg[s.label]||cfg.Neutral;
+  $('sent-emoji').textContent=sc.e;
+  $('sent-label').textContent=s.label+' Tone';
+  $('sent-label').style.color=sc.c;
+  $('sent-desc').textContent=sc.desc;
+  $('sent-compound').textContent=(s.compound>=0?'+':'')+s.compound.toFixed(3);
+  $('sent-compound').style.color=sc.c;
+  const pct=((s.compound+1)/2*100);
+  setTimeout(()=>$('sent-fill').style.width=pct+'%',100);
+  $('s-pos').textContent=(s.positive*100).toFixed(0)+'%';
+  $('s-neu').textContent=(s.neutral*100).toFixed(0)+'%';
+  $('s-neg').textContent=(s.negative*100).toFixed(0)+'%';
+
+  // Keywords
+  const k=d.keywords;
+  $('kw-stats').innerHTML=[
+    {v:k.match_pct.toFixed(0)+'%',l:'Match Rate',c:'#22c55e'},
+    {v:k.matched.length,l:'Matched',c:'#38bdf8'},
+    {v:k.missing.length,l:'Missing',c:'#f87171'},
+    {v:(k.cosine_similarity*100).toFixed(0)+'%',l:'Similarity',c:'#c084fc'},
+  ].map(x=>`<div class="kw-stat"><div class="kw-stat-val" style="color:${x.c}">${x.v}</div><div class="kw-stat-lbl">${x.l}</div></div>`).join('');
+  setTimeout(()=>$('match-fill').style.width=k.match_pct+'%',100);
+  $('matched-section').innerHTML=k.matched.length?`
+    <div class="kw-section-lbl"><span class="dot" style="background:#22c55e;box-shadow:0 0 6px #22c55e88"></span>Matched Keywords</div>
+    <div class="chips">${k.matched.map(w=>`<span class="chip chip-m">${w}</span>`).join('')}</div>`:'';
+  $('missing-section').innerHTML=k.missing.length?`
+    <div class="kw-section-lbl"><span class="dot" style="background:#ef4444;box-shadow:0 0 6px #ef444488"></span>Missing from Answer</div>
+    <div class="chips">${k.missing.map(w=>`<span class="chip chip-x">${w}</span>`).join('')}</div>`:'';
+
+  // Feedback
+  const renderList=(id,items)=>{
+    $(id).innerHTML=items.length
+      ?items.map(t=>`<li class="fb-item"><span class="fb-dot"></span>${t}</li>`).join('')
+      :`<li class="fb-item" style="color:var(--txt3);font-style:italic">None noted</li>`;
+  };
+  renderList('fb-str',d.feedback.strengths);
+  renderList('fb-imp',d.feedback.improvements);
+  renderList('fb-tip',d.feedback.tips);
+}
+
+// ── Reset ───────────────────────────────────────────────────────────────
+btnReset.addEventListener('click',()=>{
+  txEl.value='';wcEl.textContent='0 words';
+  btnEval.disabled=true;btnReset.style.display='none';
+  clearResults();hideErr();hideStatus();
+});
+function clearResults(){results.style.display='none';}
+
+// ── Helpers ─────────────────────────────────────────────────────────────
+function showStatus(m){statusMsg.textContent=m;statusMsg.style.display='block';errMsg.style.display='none'}
+function hideStatus(){statusMsg.style.display='none'}
+function showErr(m){errMsg.textContent=m;errMsg.style.display='block';statusMsg.style.display='none'}
+function hideErr(){errMsg.style.display='none'}
+</script>
+</body>
+</html>
