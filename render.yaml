@@ -1,7 +1,7 @@
 services:
   # ── Backend API (FastAPI) ──────────────────────────────────────────
   - type: web
-    name: interview-eval-api
+    name: rajani-voice-analyser-api
     runtime: python
     rootDir: backend
     buildCommand: pip install --no-cache-dir -r requirements.txt
@@ -9,18 +9,3 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: "3.11"
-
-  # ── Frontend (React/Vite static site) ─────────────────────────────
-  - type: web
-    name: interview-eval-frontend
-    runtime: static
-    rootDir: frontend
-    buildCommand: npm install && npm run build
-    staticPublishPath: dist
-    envVars:
-      - key: VITE_API_URL
-        sync: false   # set manually in Render dashboard after backend deploys
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
