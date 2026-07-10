@@ -2,6 +2,8 @@
 
 An AI-powered web app that **records your voice**, **transcribes your speech**, and **evaluates your interview answer** based on keyword match, sentiment, and relevance to the job description.
 
+Migrated from Python FastAPI to a highly scalable **Java Spring Boot** backend.
+
 ---
 
 ## 📁 Folder Structure
@@ -9,19 +11,20 @@ An AI-powered web app that **records your voice**, **transcribes your speech**, 
 ```
 Voice-Analyser/
 │
-├── 📂 backend/                        ← Backend (FastAPI API Server)
-│   ├── main.py                        ← All API routes & AI logic
-│   ├── requirements.txt               ← Python dependencies
-│   └── (also serves the frontend)
+├── 📂 backend-java/                  ← Backend (Spring Boot API Server)
+│   ├── pom.xml                       ← Maven configuration
+│   ├── mvnw / mvnw.cmd               ← Maven wrapper executables
+│   └── 📂 src/                       ← Spring Boot controllers, services, and DTOs
 │
-├── 📂 frontend/                       ← Frontend (React + Vite Web App)
-│   ├── index.html                     ← Main HTML entry point
-│   ├── package.json                   ← Node dependencies
-│   ├── vite.config.js                 ← Vite build config
-│   └── 📂 src/                        ← React components & pages
+├── 📂 frontend/                      ← Frontend (React + Vite Web App)
+│   ├── index.html                    ← Vite entry point
+│   ├── package.json                  ← Node dependencies
+│   ├── vite.config.js                ← Vite build config with dev proxy
+│   └── 📂 src/                       ← React components & pages
 │
-├── render.yaml                        ← Render.com deployment config
-└── .gitignore                         ← Git ignored files
+├── Dockerfile                        ← Multi-stage Docker build (production ready)
+├── render.yaml                       ← Render.com deployment config
+└── .gitignore                        ← Git ignored files
 ```
 
 ---
@@ -33,21 +36,21 @@ User opens the web app (React UI)
          ↓
 Records voice answer using microphone
          ↓
-Audio sent to FastAPI backend → /transcribe
+Audio sent to Spring Boot backend → /transcribe
          ↓
-Google Speech Recognition → converts audio to text
+Gemini API → converts audio to text transcript
          ↓
 Text + Job Description sent to → /evaluate
          ↓
 Backend analyses the answer:
-  ✅ Keyword match (TF-IDF)
-  ✅ Sentiment (VADER)
-  ✅ Cosine similarity with JD
-  ✅ Word count & specificity
+   ✅ Keyword match (Local heuristics / Gemini NLP)
+   ✅ Cosine similarity with JD (Local Cosine Sim / Gemini semantic relevance)
+   ✅ Sentiment (Local polarity / Gemini sentiment analysis)
+   ✅ Word count & specificity
          ↓
 Returns Score (0–10), Grade & Feedback
          ↓
-Frontend displays results to user
+Frontend displays results to user (React dashboard)
 ```
 
 ---
@@ -73,11 +76,11 @@ Frontend displays results to user
 
 ---
 
-## 🌐 API Endpoints (FastAPI)
+## 🌐 API Endpoints (Spring Boot)
 
 | Method | Endpoint | What it does |
 |--------|----------|-------------|
-| `GET` | `/` | Serves the frontend app |
+| `GET` | `/` | Serves the built frontend app |
 | `POST` | `/transcribe` | Receives audio → returns transcript text |
 | `POST` | `/evaluate` | Receives transcript + JD → returns score & feedback |
 | `GET` | `/health` | Health check → `{"status": "ok"}` |
@@ -96,13 +99,30 @@ Frontend displays results to user
 
 ```json
 {
-  "final_score": 7.85,
-  "grade": "Good",
-  "sentiment": { "label": "Positive", "compound": 0.62 },
+  "transcript": "I have 3 years of Python experience and led a team of 5...",
+  "word_count": 12,
+  "sentiment": {
+    "label": "Positive",
+    "compound": 0.62,
+    "positive": 0.45,
+    "neutral": 0.55,
+    "negative": 0.0
+  },
   "keywords": {
     "matched": ["python", "leadership"],
-    "match_pct": 65.0
+    "missing": ["kubernetes", "docker"],
+    "match_pct": 50.0,
+    "cosine_similarity": 0.45
   },
+  "score_breakdown": {
+    "keyword": 8.0,
+    "similarity": 7.5,
+    "sentiment": 9.0,
+    "length": 10.0,
+    "specificity": 8.5
+  },
+  "final_score": 8.25,
+  "grade": "Good",
   "feedback": {
     "strengths": ["Good keyword coverage", "Confident tone"],
     "improvements": ["Add more specific examples"],
@@ -115,19 +135,24 @@ Frontend displays results to user
 
 ## 🚀 How to Run Locally
 
-### Step 1 — Start the Backend
+### Step 1 — Start the Spring Boot Backend
+
+Set the `GEMINI_API_KEY` environment variable to use Gemini features, otherwise the system will use a local fallback engine for evaluation.
 
 ```bash
-cd backend
-pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
+cd backend-java
+# Set your API Key (Powershell)
+$env:GEMINI_API_KEY="your-gemini-key"
+
+# Run Spring Boot
+./mvnw.cmd spring-boot:run
 ```
 
-Backend runs at → http://localhost:8000
+The Spring Boot backend runs at → http://localhost:8000
 
 ---
 
-### Step 2 — Start the Frontend
+### Step 2 — Start the React Frontend
 
 ```bash
 cd frontend
@@ -135,49 +160,15 @@ npm install
 npm run dev
 ```
 
-Frontend runs at → http://localhost:5173
+The React frontend starts at → http://localhost:5173 (which automatically proxies api requests to port 8000).
 
 ---
 
-## 🌍 Live Deployment (Render)
+## 🌍 Production Build & Deployment
 
-| Service | URL |
-|---------|-----|
-| Frontend App | https://rajani-voice-analyser.onrender.com |
-| Backend API | https://rajani-voice-analyser-api.onrender.com |
+The application features a root-level `Dockerfile` using a multi-stage configuration:
+1. **Frontend Builder**: Installs dependencies and compiles React assets into `/frontend/dist`.
+2. **Backend Builder**: Builds the Spring Boot `.jar` package.
+3. **Runner**: Bundles the `.jar` package with the built frontend assets and exposes port `8000`.
 
-> ⚠️ Free tier may **sleep** after inactivity — first request takes ~30 seconds to wake up.
-
----
-
-## 🛠️ Tech Stack
-
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| Frontend | React + Vite | Web UI (voice recorder, results display) |
-| Backend | FastAPI (Python) | REST API server |
-| Speech-to-Text | Google Speech Recognition | Converts audio to text |
-| Sentiment Analysis | VADER | Detects tone (positive/negative/neutral) |
-| Keyword Matching | TF-IDF + Cosine Similarity | Matches answer to job description |
-| Deployment | Render.com | Cloud hosting |
-
----
-
-## 📦 Key Python Libraries
-
-| Library | Purpose |
-|---------|---------|
-| `fastapi` | Build the REST API |
-| `uvicorn` | Run the FastAPI server |
-| `speechrecognition` | Convert voice audio to text |
-| `vaderSentiment` | Sentiment analysis |
-| `scikit-learn` | TF-IDF keyword extraction & cosine similarity |
-| `pydantic` | Validate API request/response data |
-
----
-
-## 🗂️ GitHub Repository
-
-```
-https://github.com/Rajani-05/Voice-Analyser
-```
+To deploy on platforms like Render.com, create a **Web Service** referencing this repository and select the **Docker** runtime.

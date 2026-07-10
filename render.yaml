@@ -1,11 +1,9 @@
 services:
-  # ── Backend API (FastAPI) ──────────────────────────────────────────
+  # ── Unified Java Spring Boot + React Application ───────────────────
   - type: web
-    name: rajani-voice-analyser-api
-    runtime: python
-    rootDir: backend
-    buildCommand: pip install --no-cache-dir -r requirements.txt
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    name: rajani-voice-analyser
+    runtime: docker
+    plan: free
     envVars:
-      - key: PYTHON_VERSION
-        value: "3.11"
+      - key: GEMINI_API_KEY
+        sync: false

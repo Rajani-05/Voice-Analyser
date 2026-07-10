@@ -33,6 +33,12 @@ public class InterviewController {
 
     @GetMapping("/")
     public ResponseEntity<?> serveIndex() {
+        File distIndex = new File("../frontend/dist/index.html");
+        if (distIndex.exists()) {
+            return ResponseEntity.ok()
+                    .contentType(MediaType.TEXT_HTML)
+                    .body(new FileSystemResource(distIndex));
+        }
         File indexFile = new File("../frontend/index.html");
         if (indexFile.exists()) {
             return ResponseEntity.ok()

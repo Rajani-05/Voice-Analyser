@@ -79,11 +79,11 @@ export default function ScoreCard({ result }) {
   const colors = GRADE_COLORS[grade] || GRADE_COLORS["Average"];
 
   const breakdown = [
-    { label: "Keyword Match",   value: score_breakdown.keyword_score,     color: "#818cf8" },
-    { label: "JD Similarity",  value: score_breakdown.similarity_score,   color: "#38bdf8" },
-    { label: "Sentiment",      value: score_breakdown.sentiment_score,    color: "#34d399" },
-    { label: "Answer Length",  value: score_breakdown.length_score,       color: "#fbbf24" },
-    { label: "Specificity",    value: score_breakdown.specificity_score,  color: "#f472b6" },
+    { label: "Keyword Match",   value: score_breakdown.keyword ?? score_breakdown.keyword_score ?? 0,     color: "#818cf8" },
+    { label: "JD Similarity",  value: score_breakdown.similarity ?? score_breakdown.similarity_score ?? 0,   color: "#38bdf8" },
+    { label: "Sentiment",      value: score_breakdown.sentiment ?? score_breakdown.sentiment_score ?? 0,    color: "#34d399" },
+    { label: "Answer Length",  value: score_breakdown.length ?? score_breakdown.length_score ?? 0,       color: "#fbbf24" },
+    { label: "Specificity",    value: score_breakdown.specificity ?? score_breakdown.specificity_score ?? 0,  color: "#f472b6" },
   ];
 
   return (

@@ -9,7 +9,13 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/**")
-                .addResourceLocations("file:../frontend/");
+        java.io.File distDir = new java.io.File("../frontend/dist");
+        if (distDir.exists() && distDir.isDirectory()) {
+            registry.addResourceHandler("/**")
+                    .addResourceLocations("file:../frontend/dist/");
+        } else {
+            registry.addResourceHandler("/**")
+                    .addResourceLocations("file:../frontend/");
+        }
     }
 }
