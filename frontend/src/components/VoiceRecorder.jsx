@@ -26,6 +26,9 @@ export default function VoiceRecorder({ onTranscript, onStatus }) {
     animFrameRef.current = requestAnimationFrame(animateWave);
   };
 
+  const recognitionRef = useRef(null);
+  const localTranscriptRef = useRef("");
+
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -47,11 +50,49 @@ export default function VoiceRecorder({ onTranscript, onStatus }) {
         if (e.data.size > 0) chunksRef.current.push(e.data);
       };
 
+      // Set up browser-based Speech Recognition in parallel
+      localTranscriptRef.current = "";
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognition) {
+        const rec = new SpeechRecognition();
+        rec.continuous = true;
+        rec.interimResults = true;
+        rec.lang = "en-US";
+
+        rec.onresult = (event) => {
+          let final = "";
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+              final += event.results[i][0].transcript + " ";
+            }
+          }
+          if (final) {
+            localTranscriptRef.current += final;
+          }
+        };
+
+        rec.onerror = (e) => {
+          console.warn("Browser SpeechRecognition error:", e.error);
+        };
+
+        recognitionRef.current = rec;
+        rec.start();
+      }
+
       mr.onstop = async () => {
         cancelAnimationFrame(animFrameRef.current);
         setBars(Array(WAVEFORM_BARS).fill(4));
         setProcessing(true);
         onStatus("transcribing");
+
+        // Stop browser SpeechRecognition if running
+        if (recognitionRef.current) {
+          try {
+            recognitionRef.current.stop();
+          } catch (e) {
+            // ignore
+          }
+        }
 
         const blob = new Blob(chunksRef.current, { type: "audio/webm" });
 
@@ -63,10 +104,24 @@ export default function VoiceRecorder({ onTranscript, onStatus }) {
             onTranscript(result.transcript);
             onStatus("done");
           } else {
-            onStatus("error", result.error || "Could not understand audio.");
+            // Use browser fallback transcript if backend returned error
+            const fallback = localTranscriptRef.current.trim();
+            if (fallback) {
+              onTranscript(fallback);
+              onStatus("done");
+            } else {
+              onStatus("error", result.error || "Could not understand audio.");
+            }
           }
         } catch (err) {
-          onStatus("error", "Backend connection failed. Please type your answer instead.");
+          // Use browser fallback transcript if connection failed
+          const fallback = localTranscriptRef.current.trim();
+          if (fallback) {
+            onTranscript(fallback);
+            onStatus("done");
+          } else {
+            onStatus("error", "Backend connection failed. Please type your answer instead.");
+          }
         } finally {
           setProcessing(false);
         }
@@ -88,6 +143,13 @@ export default function VoiceRecorder({ onTranscript, onStatus }) {
     if (mediaRecorderRef.current && recording) {
       mediaRecorderRef.current.stop();
       setRecording(false);
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch (e) {
+          // ignore
+        }
+      }
     }
   };
 
@@ -95,6 +157,13 @@ export default function VoiceRecorder({ onTranscript, onStatus }) {
     return () => {
       cancelAnimationFrame(animFrameRef.current);
       streamRef.current?.getTracks().forEach((t) => t.stop());
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch (e) {
+          // ignore
+        }
+      }
     };
   }, []);
 
