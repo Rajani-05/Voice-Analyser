@@ -7,3 +7,5 @@ services:
     envVars:
       - key: GEMINI_API_KEY
         sync: false
+      - key: RENDER_EXTERNAL_URL
+        value: https://rajani-voice-analyser.onrender.com
