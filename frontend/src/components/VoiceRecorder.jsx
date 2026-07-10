@@ -56,7 +56,7 @@ export default function VoiceRecorder({ onTranscript, onStatus }) {
         const blob = new Blob(chunksRef.current, { type: "audio/webm" });
 
         // Import transcribeAudio lazily to avoid circular deps
-        const { transcribeAudio } = await import("./services/api.js");
+        const { transcribeAudio } = await import("../services/api.js");
         try {
           const result = await transcribeAudio(blob);
           if (result.success && result.transcript) {
