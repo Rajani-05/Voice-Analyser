@@ -10,12 +10,17 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         java.io.File distDir = new java.io.File("../frontend/dist");
-        if (distDir.exists() && distDir.isDirectory()) {
-            registry.addResourceHandler("/**")
-                    .addResourceLocations("file:../frontend/dist/");
-        } else {
-            registry.addResourceHandler("/**")
-                    .addResourceLocations("file:../frontend/");
-        }
+        String baseLocation = (distDir.exists() && distDir.isDirectory())
+                ? "file:../frontend/dist/"
+                : "file:../frontend/";
+
+        // Only serve known static asset directories — do NOT use /** which intercepts API routes
+        registry.addResourceHandler("/assets/**")
+                .addResourceLocations(baseLocation + "assets/");
+        registry.addResourceHandler("/static/**")
+                .addResourceLocations(baseLocation + "static/");
+        // Serve root-level static files (favicon, manifest, etc.)
+        registry.addResourceHandler("/favicon.ico", "/manifest.json", "/robots.txt", "/*.js", "/*.css", "/*.svg", "/*.png")
+                .addResourceLocations(baseLocation);
     }
 }
