@@ -6,23 +6,23 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg-base:       #060b18;
-  --bg-surface:    #0d1526;
-  --bg-glass:      rgba(13, 21, 38, 0.7);
-  --bg-glass-lite: rgba(255, 255, 255, 0.04);
-  --border-glass:  rgba(255, 255, 255, 0.08);
-  --border-glow:   rgba(99, 102, 241, 0.3);
+  --bg-base:       #0a0512;   /* Deep obsidian violet */
+  --bg-surface:    #120b24;   /* Rich dark plum surface */
+  --bg-glass:      rgba(18, 11, 36, 0.75);
+  --bg-glass-lite: rgba(255, 255, 255, 0.03);
+  --border-glass:  rgba(255, 255, 255, 0.06);
+  --border-glow:   rgba(139, 92, 246, 0.3);
 
-  --accent-1: #6366f1;   /* indigo */
-  --accent-2: #8b5cf6;   /* violet */
-  --accent-3: #38bdf8;   /* sky */
-  --accent-4: #22c55e;   /* green */
+  --accent-1: #8b5cf6;   /* violet */
+  --accent-2: #a78bfa;   /* lavender */
+  --accent-3: #ec4899;   /* pink */
+  --accent-4: #10b981;   /* emerald */
   --accent-5: #f59e0b;   /* amber */
-  --accent-6: #f472b6;   /* pink */
-  --accent-err: #ef4444;
+  --accent-6: #3b82f6;   /* blue */
+  --accent-err: #f43f5e;
 
-  --text-primary:   #f1f5f9;
-  --text-secondary: #94a3b8;
+  --text-primary:   #f8fafc;
+  --text-secondary: #cbd5e1;
   --text-muted:     #475569;
 
   --radius-sm: 8px;
