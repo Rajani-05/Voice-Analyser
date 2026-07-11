@@ -7,7 +7,8 @@ Migrated from Python FastAPI to a highly scalable **Java Spring Boot** backend.
 ---
 
 
-LIVEDEMO :  https://voice-analyser-rajani.netlify.app
+🚀 Live URL
+👉 https://voice-analyser-rajani.netlify.app
 
 ## 📁 Folder Structure
 
