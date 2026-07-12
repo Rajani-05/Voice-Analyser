@@ -58,13 +58,7 @@ Frontend displays results to user (React dashboard)
 ```
 
 ---
-## Live Demo
 
-Frontend:
-https://voice-analyser-rajani.netlify.app
-
-Backend API:
-https://voice-analyse-rajani.onrender.com
 
 ## 🧠 How the Score is Calculated
 
@@ -162,6 +156,8 @@ $env:GEMINI_API_KEY="your-gemini-key"
 The Spring Boot backend runs at → http://localhost:8000
 
 ---
+Backend API:
+https://voice-analyser-rajani.onrender.com
 
 ### Step 2 — Start the React Frontend
 
