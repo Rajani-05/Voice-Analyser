@@ -64,7 +64,7 @@ Frontend:
 https://voice-analyser-rajani.netlify.app
 
 Backend API:
-https://voice-analyser-rajani.onrender.com
+https://voice-analyse-rajani.onrender.com
 
 ## 🧠 How the Score is Calculated
 
