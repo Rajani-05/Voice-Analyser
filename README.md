@@ -58,6 +58,13 @@ Frontend displays results to user (React dashboard)
 ```
 
 ---
+## Live Demo
+
+Frontend:
+https://voice-analyser-rajani.netlify.app
+
+Backend API:
+https://voice-analyser-rajani.onrender.com
 
 ## 🧠 How the Score is Calculated
 
